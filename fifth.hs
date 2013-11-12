@@ -59,7 +59,14 @@ productTree tree
 	| empty tree = 1
 	| otherwise = element tree * (productTree $ left tree) * (productTree $ right tree)
 
-{- remove :: (Eq a, Ord a) => a-> Tree a -> Tree a
+remove :: (Eq a, Ord a) => a-> Tree a -> Tree a
 remove value tree
 	| empty tree = Empty
-	| element tree == value = Node (element $ right tree) (left tree) -}
+	| element tree == value = 
+		if (empty $ right tree) && (empty $ left tree)
+				then Empty
+		else if empty $ right tree
+			then Node (element $ left tree) (remove (element $ left tree) (left tree)) Empty
+			else Node (element $ right tree) (left tree) (remove (element $ right tree) (right tree))
+	| value > element tree = Node (element tree) (left tree) (remove value (right tree))
+	| otherwise = Node (element tree) (remove value (left tree)) (right tree)

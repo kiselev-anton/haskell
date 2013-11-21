@@ -33,7 +33,7 @@ intersections (line:lines) =
 intersections :: (Fractional a, Show a, Eq a) => [TLine a] -> [TPoint a]
 intersections lines = nub [fromJust $ intersection line1 line2 | line1 <- lines, line2 <- lines, intersection line1 line2 /= Nothing]
 
--- #3 mostly ready
+-- #3 ready
 -- Applicative functors
 cartesianProduct1 :: [a] -> [a] -> [[a]]
 cartesianProduct1 x y = (\x y -> [x, y]) <$> x <*> y
@@ -47,25 +47,36 @@ cartesianProduct3 :: [a] -> [a] -> [[a]]
 cartesianProduct3 [] xs = []
 cartesianProduct3 (x:xs) ys = map (\y -> [x, y]) ys ++ cartesianProduct3 xs ys
 
--- #4
+-- Monads
+cartesianProduct4 :: [a] -> [a] -> [[a]]
+cartesianProduct4 list1 list2 = list1 >>= (\a -> map (\x -> [a,x]) list2)
+
+--Monads2
+cartesianProduct5 :: [a] -> [a] -> [[a]]
+cartesianProduct5 list1 list2 = do
+    a <- list1
+    b <- list2
+    return [a,b]
+
+-- #4 bugged
 -- a=1, b=2, c,d=10, e=1,11,21
 -- String = [Char]
 
 -- TODO: fix repetitions
-{-
-stringValues :: String -> [Int]
-stringValues [] = []
-stringValues [x]
+
+charValues :: Char -> [Int]
+charValues x
     | x == 'a' = [1]
     | x == 'b' = [2]
     | x == 'c' || x == 'd' = [10]
     | x == 'e' = [1,11,21]
-stringValues (x:xs)
-    | x == 'a' = map (+1) $ stringValues xs
-    | x == 'b' = map (+2) $ stringValues xs
-    | x == 'c' || x == 'd' = map (+10) $ stringValues xs
-    | x == 'e' = concat [[x+1, x+11, x+21] | x <- stringValues xs] 
--}
+    | otherwise = []
+stringValues :: String -> [Int]
+stringValues [x] = charValues x
+stringValues string = 
+    foldl1 (\list1 list2 -> map sum $ cartesianProduct1 list1 list2) $ map charValues string
+
+
 
 -- #5 ready
 --maxWithHistory :: 
@@ -85,3 +96,10 @@ maxWithHistoryTemp (x:xs) = runWriter $ foldl
         where 
             a wr = fst $ runWriter wr
             chain wr = snd $ runWriter wr 
+
+-- Суть алгоритма:
+-- 1) Проходимся фолдом по данному списку, начинаем фолд с writer-а, который создаём на основе первого элемента
+-- 2) Затем, вытаскивая элемент из него, сверяем его с новым. Создаём на основе новый writer, выписывая в него историю.
+-- 3) Все последовательные действия склеиваем и убираем лишнее с конца.
+
+-- P.S. Код не очень хороший и суть монады writer не используется, используется лишь та её часть, которая похожа на пару.
